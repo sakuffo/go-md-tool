@@ -1,33 +1,50 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/microcosm-cc/bluemonday"
+	"github.com/russross/blackfriday/v2"
 )
 
 const (
-	header = `<!DOCTYPE html>
+	HEADER = `<!DOCTYPE html>
 	<html>
 		<head>
 			<meta http-equiv="content-type" content="text/html; charset=utf-8">
 			<title>Markdown Preview Tool</title>
 		</head>`
-	footer = `<body>
+	FOOTER = `<body>
 		</body>
 	</html>
 	`
 )
 
-func parseContent() {}
+func parseContent(input []byte) []byte {
+	output := blackfriday.Run(input)
+	body := bluemonday.UGCPolicy().SanitizeBytes(output)
 
-func saveHTML() {}
+	var buffer bytes.Buffer
+
+	buffer.WriteString(HEADER)
+	buffer.Write(body)
+	buffer.WriteString(FOOTER)
+
+	return buffer.Bytes()
+}
+
+func saveHTML(outFname string, data []byte) error {
+	return ioutil.WriteFile(outFname, data, 0644)
+}
 
 func run(filename string) error {
 	// Read all the data from the input file and check for errors
-	input, err := ioutil.Readfile(filename)
+	input, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
